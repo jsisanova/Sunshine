@@ -19,7 +19,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 
-
+//This Exercise is all about optimizing the synchronization process that was made in the previous exercise.
+//It’s best practice to not initialize things more than once,
+//so for that, we will make sure that startImmediateSync will only get called once when the app starts and only if the database was empty.
 public class SunshineSyncUtils {
 
 //  TODO (1) Declare a private static boolean field called sInitialized
@@ -28,7 +30,7 @@ public class SunshineSyncUtils {
     //  TODO (3) Only execute this method body if sInitialized is false
     //  TODO (4) If the method body is executed, set sInitialized to true
     //  TODO (5) Check to see if our weather ContentProvider is empty
-        //  TODO (6) If it is empty or we have a null Cursor, sync the weather now!
+    //  TODO (6) If it is empty or we have a null Cursor, sync the weather now!
 
     /**
      * Helper method to perform a sync immediately using an IntentService for asynchronous
