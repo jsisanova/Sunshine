@@ -15,22 +15,103 @@
  */
 package com.example.android.sunshine.sync;
 
+import android.content.ContentProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+
+import com.example.android.sunshine.data.WeatherContract;
 
 //This Exercise is all about optimizing the synchronization process that was made in the previous exercise.
 //It’s best practice to not initialize things more than once,
 //so for that, we will make sure that startImmediateSync will only get called once when the app starts and only if the database was empty.
 public class SunshineSyncUtils {
 
-//  TODO (1) Declare a private static boolean field called sInitialized
+    //  TODO (1) Declare a private static boolean field called sInitialized
+    private static boolean sInitialized;
 
+    /**
+     * Creates periodic sync tasks and checks to see if an immediate sync is required. If an
+     * immediate sync is required, this method will take care of making sure that sync occurs.
+     *
+     * @param context Context that will be passed to other methods and used to access the
+     *                ContentResolver
+     */
     //  TODO (2) Create a synchronized public static void method called initialize
-    //  TODO (3) Only execute this method body if sInitialized is false
-    //  TODO (4) If the method body is executed, set sInitialized to true
-    //  TODO (5) Check to see if our weather ContentProvider is empty
-    //  TODO (6) If it is empty or we have a null Cursor, sync the weather now!
+    synchronized public static void initialize(@NonNull final Context context) {
+
+//      TODO (3) Only execute this method body if sInitialized is false
+        /*
+         * Only perform initialization once per app lifetime. If initialization has already been
+         * performed, we have nothing to do in this method.
+         */
+        if (sInitialized) return;
+
+//     TODO (4) If the method body is executed, set sInitialized to true
+        sInitialized = true;
+
+//      TODO (5) Check to see if our weather ContentProvider is empty
+        /*
+         * We need to check to see if our ContentProvider has data to display in our forecast
+         * list. However, performing a query on the main thread is a bad idea as this may
+         * cause our UI to lag. Therefore, we create a thread in which we will run the query
+         * to check the contents of our ContentProvider.
+         */
+//        To check if the ContentProvider is empty, simply run a query and get the result count, but do so on a background thread using an AsyncTask
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            public Void doInBackground( Void... voids ) {
+
+                /* URI for every row of weather data in our weather table*/
+                Uri forecastQueryUri = WeatherContract.WeatherEntry.CONTENT_URI;
+
+                /*
+                 * Since this query is going to be used only as a check to see if we have any
+                 * data (rather than to display data), we just need to PROJECT the ID of each
+                 * row.
+                 * In our queries where we display data, we need to PROJECT more columns
+                 * to determine what weather details need to be displayed.
+                 */
+                String[] projectionColumns = {WeatherContract.WeatherEntry._ID};
+                String selectionStatement = WeatherContract.WeatherEntry
+                        .getSqlSelectForTodayOnwards();
+
+                /* Here, we perform the query to check to see if we have any weather data */
+                Cursor cursor = context.getContentResolver().query(
+                        forecastQueryUri,
+                        projectionColumns,
+                        selectionStatement,
+                        null,
+                        null);
+                /*
+                 * A Cursor object can be null for various different reasons. A few are
+                 * listed below.
+                 *
+                 *   1) Invalid URI
+                 *   2) A certain ContentProvider's query method returns null
+                 *   3) A RemoteException was thrown.
+                 *
+                 * Bottom line, it is generally a good idea to check if a Cursor returned
+                 * from a ContentResolver is null.
+                 *
+                 * If the Cursor was null OR if it was empty, we need to sync immediately to
+                 * be able to display data to the user.
+                 */
+                //  TODO (6) If it is empty or we have a null Cursor, sync the weather now!
+//                If the ContentProvider is in fact empty, go ahead and call startImmediateSync
+                if (null == cursor || cursor.getCount() == 0) {
+                    startImmediateSync(context);
+                }
+
+                /* Make sure to close the Cursor to avoid memory leaks! */
+                cursor.close();
+                return null;
+            }
+        }.execute();
+    }
 
     /**
      * Helper method to perform a sync immediately using an IntentService for asynchronous
