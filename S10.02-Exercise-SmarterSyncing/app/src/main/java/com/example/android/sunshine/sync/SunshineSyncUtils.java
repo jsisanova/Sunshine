@@ -102,6 +102,7 @@ public class SunshineSyncUtils {
                  */
                 //  TODO (6) If it is empty or we have a null Cursor, sync the weather now!
 //                If the ContentProvider is in fact empty, go ahead and call startImmediateSync
+//                make sure that startImmediateSync will only get called once when the app starts and only if the database was empty.
                 if (null == cursor || cursor.getCount() == 0) {
                     startImmediateSync(context);
                 }
